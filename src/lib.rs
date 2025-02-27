@@ -147,6 +147,17 @@ impl Contract {
         self.locktime = locktime;
     }
 
+    #[private]
+    // debug method to revert failed withdraw capital
+    pub fn set_allocation_status_to_active(&mut self, capital_id: u64) {
+        let mut capital = self
+            .capital
+            .get(&capital_id)
+            .expect("Capital Allocation not found");
+        capital.status = CapitalAllocationStatus::Active;
+        self.capital.insert(&capital_id, &capital);
+    }
+
     pub fn get_locktime(&self) -> u64 {
         self.locktime.clone()
     }
@@ -433,18 +444,19 @@ impl Contract {
             "Too many assets in Capital Allocation"
         );
 
-        events::emit::run_agent(
-            &self.agent,
-            &serde_json::json!(
-                {
-                    "action": "add_position".to_string(),
-                    "capital_id": capital_id,
-                    "token_id": token_id.to_string(),
-                    "amount": amount.to_string(),
-                }
-            )
-            .to_string(),
-        );
+        // skip running agent on `add_position` because it doesn't handle this action
+        // events::emit::run_agent(
+        //     &self.agent,
+        //     &serde_json::json!(
+        //         {
+        //             "action": "add_position".to_string(),
+        //             "capital_id": capital_id,
+        //             "token_id": token_id.to_string(),
+        //             "amount": amount.to_string(),
+        //         }
+        //     )
+        //     .to_string(),
+        // );
 
         let position = AssetPosition { token_id, amount };
 
